@@ -157,7 +157,7 @@ class BashVisitor(LanguageVisitor):
 
     def ae(self, fmt: str, *args: Any) -> str:
         """
-        Arithmetic expansion helper function.
+        Arithmetic expansion helper function
         :param fmt: format string
         :param args: vararg params
         :return: formatted string as an arithmetic expansion
@@ -176,8 +176,7 @@ class BashVisitor(LanguageVisitor):
         # Write bytes in string
         sb = StringBuilder()
         sb.append(self.result_name + "=( ")
-        for b in ctx.bytes:
-            sb.append(self.hex(b) + " ")
+        sb.append(" ".join([self.hex(b) for b in ctx.bytes]))
         sb.append(")\n")
         # Write for loop
         sb.append("for {} in ${{!{}[@]}}; do\n".format(self.i_name, self.result_name))
@@ -290,8 +289,7 @@ class CSharpVisitor(LanguageVisitor):
         # Write bytes in string
         sb = StringBuilder()
         sb.append("var " + self.result + " = new System.Text.StringBuilder(\"")
-        for b in ctx.bytes:
-            sb.append("\\u" + "{:04x}".format(b))
+        sb.append("".join(["\\u" + "{:04x}".format(b) for b in ctx.bytes]))
         sb.append("\");\n")
         # Write for loop
         permutation = ""
@@ -353,6 +351,59 @@ class CSharpVisitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
 
-##############
-# C# Visitor #
-##############
+#############
+# C Visitor #
+#############
+
+
+class CVisitor(LanguageVisitor):
+
+    def __init__(self):
+        super().__init__()
+        self.variable = None
+        self.temp = None
+        self.i = None
+        self.result = None
+
+    def initialise(self, ctx: Context) -> StringBuilder:
+        # Generate variable names
+        self.variable = self.generate_name()
+        self.temp = self.generate_name()
+        self.i = self.generate_name()
+        self.result = "string"
+        # Write bytes in string
+        sb = StringBuilder()
+        sb.append("wchar_t" + self.result + "[" + str(len(ctx.bytes)) + "] = {")
+        sb.append(",".join([self.hex(b) for b in ctx.bytes]))
+        sb.append("};\n")
+
+
+    def finalise(self, sb: StringBuilder) -> None:
+        pass
+
+    def visit_add(self, add: Add, sb: StringBuilder) -> None:
+        pass
+
+    def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
+        pass
+
+    def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
+        pass
+
+    def visit_not(self, negation: Not, sb: StringBuilder) -> None:
+        pass
+
+    def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
+        pass
+
+    def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
+        pass
+
+    def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
+        pass
+
+    def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
+        pass
+
+    def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
+        pass

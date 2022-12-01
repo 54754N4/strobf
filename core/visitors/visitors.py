@@ -364,7 +364,7 @@ class CVisitor(LanguageVisitor):
         self.result = "string"
         # Write bytes in string
         sb = StringBuilder()
-        sb.append("wchar_t" + self.result + "[" + str(len(ctx.bytes)) + "] = {")
+        sb.append("wchar_t " + self.result + "[" + str(len(ctx.bytes)) + "] = {")
         sb.append(",".join([self.hex(b) for b in ctx.bytes]))
         sb.append("};\n")
         # Write for loop
@@ -376,31 +376,53 @@ class CVisitor(LanguageVisitor):
         return sb
 
     def finalise(self, sb: StringBuilder) -> None:
-        pass
+        sb.append("\t{}[{}] = {};\n".format(self.result, self.i, self.variable))
+        sb.append("}\n")
+        sb.append("wprintf(" + self.result + ");")
 
     def visit_add(self, add: Add, sb: StringBuilder) -> None:
-        pass
+        if add.value == 1:
+            sb.append("\t" + self.variable + "++;\n")
+            return
+        sb.append("\t" + self.variable + " += " + self.hex(add.value) + ";\n")
 
     def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
-        pass
+        sb.append("\t" + self.variable + " = ")
+        sb.append("(" + self.variable + " * " + self.hex(mm.value) + ") % " + self.hex(mm.modulo) + ";\n")
 
     def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
-        pass
+        self.visit_mul_mod(mmi, sb)
 
     def visit_not(self, negation: Not, sb: StringBuilder) -> None:
-        pass
+        sb.append("\t" + self.variable + " = ~" + self.variable + " & " + self.hex(negation.mask) + ";\n")
 
     def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
-        pass
+        sb.append("\t" + self.temp + " = ")
+        sb.append("((" + self.variable + " >> " + self.hex(permutation.pos1) + ")")
+        sb.append(" ^ (" + self.variable + " >> " + self.hex(permutation.pos2) + ")) & ((1 << ")
+        sb.append(self.hex(permutation.bits) + ") - 1);\n")
+        sb.append("\t" + self.variable + " ^= ")
+        sb.append("(" + self.temp + " << " + self.hex(permutation.pos1) + ") | (" + self.temp + " << ")
+        sb.append(self.hex(permutation.pos2) + ");\n")
 
     def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
-        pass
+        mask = self.hex(rol.mask)
+        sb.append("\t" + self.variable + " = ")
+        sb.append("(((" + self.variable + " & " + mask + ") >> " + self.hex(rol.lhs()) + ") | (")
+        sb.append(self.variable + " << " + self.hex(rol.rhs()) + " )) & " + mask + ";\n")
 
     def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
-        pass
+        mask = self.hex(ror.mask)
+        sb.append("\t" + self.variable + " = ")
+        sb.append("(((" + self.variable + " & " + mask + ") << " + self.hex(ror.lhs()) + ") | (")
+        sb.append(self.variable + " >> " + self.hex(ror.rhs()) + " )) & " + mask + ";\n")
 
     def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
-        pass
+        if sub.value == 1:
+            sb.append("\t" + self.variable + "--;\n")
+            return
+        sb.append("\t" + self.variable + " -= " + self.hex(sub.value) + ";\n")
 
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
-        pass
+        sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
+

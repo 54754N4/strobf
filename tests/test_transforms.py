@@ -1,6 +1,7 @@
 import unittest
 
 from core.transformations.transforms import *
+from core.transformations.TransformationChain import TransformationChain
 
 
 class MyTestCase(unittest.TestCase):
@@ -40,6 +41,16 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(rl.lhs(), rr.lhs())
         self.assertEqual(rl.rhs(), rr.rhs())
         self.assertEqual(v, temp)
+
+    def test_transformation_chain(self) -> None:
+        max_bits = 16
+        value = 666
+        add = Add(value, max_bits)
+        chain = TransformationChain(add)
+        reverse = chain.reverse()
+        self.assertEqual(1, len(chain.transforms))
+        self.assertEqual(667, chain.apply(1))
+        self.assertEqual(1, reverse.apply(667))
 
 
 if __name__ == '__main__':

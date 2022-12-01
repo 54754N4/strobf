@@ -1,6 +1,6 @@
 import unittest
 
-from core.transforms import *
+from core.transformations.transforms import *
 
 
 class MyTestCase(unittest.TestCase):

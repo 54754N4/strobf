@@ -1,5 +1,5 @@
-from core.engine import PolymorphicEngine
-from core.visitors import BashVisitor
+from core.engine.engine import PolymorphicEngine
+from core.utils.visitors import BashVisitor
 
 if __name__ == '__main__':
     min_ops = 5

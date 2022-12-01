@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import List, Dict, Callable, Tuple
+from typing import List, Dict, Callable
 from random import randint
-from core.transforms import *
+from core.transformations.transforms import *
 import os
 
 

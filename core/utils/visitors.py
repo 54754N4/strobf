@@ -4,9 +4,9 @@ import random
 from io import StringIO
 from typing import Any, Callable, Type, Dict, TypeVar
 
-from core.engine import Context, TransformationChain
-from core.transforms import *
-from core.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, Substract, Xor
+from core.engine.engine import Context, TransformationChain
+from core.transformations.transforms import *
+from core.transformations.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, Substract, Xor
 
 
 #####################

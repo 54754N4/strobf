@@ -264,7 +264,7 @@ class BashVisitor(LanguageVisitor):
                           self.variable_name,
                           self.variable_name, mask,
                           self.hex(rol.lhs()),
-                          self.variable_name, self.hex(rol.rhs),
+                          self.variable_name, self.hex(rol.rhs()),
                           mask))
         sb.append("\n")
 

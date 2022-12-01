@@ -1,0 +1,5 @@
+# Ignore IntelliJ file
+.idea/*
+
+# Ignore compiled files
+*.pyc

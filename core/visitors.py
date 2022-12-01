@@ -300,6 +300,7 @@ class BashVisitor(LanguageVisitor):
 class CSharpVisitor(LanguageVisitor):
 
     def __init__(self):
+        super().__init__()
         self.variable = None
         self.temp = None
         self.i = None
@@ -377,3 +378,6 @@ class CSharpVisitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
 
+##############
+# C# Visitor #
+##############

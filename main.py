@@ -9,6 +9,6 @@ if __name__ == '__main__':
 
     text = "Hello World!"
     ctx = engine.transform(text)
-    # visitor = CSharpVisitor()
-    visitor = BashVisitor()
+    # visitor = BashVisitor()
+    visitor = CSharpVisitor()
     print(visitor.visit(ctx))

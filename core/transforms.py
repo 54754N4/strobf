@@ -23,13 +23,6 @@ class Transformation(ABC):
     def reversed(self) -> Transformation:
         raise NotImplementedError
 
-    @classmethod
-    def __subclasshook__(cls, C):
-        if cls is Transformation:
-            if any("transform" and "reversed" in B.__dict__ for B in C.__mro__):
-                return True
-        raise NotImplementedError
-
     @staticmethod
     def gcd(a: int, b: int) -> int:
         if a == 0:

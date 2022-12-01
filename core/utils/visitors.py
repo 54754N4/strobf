@@ -1,45 +1,20 @@
 from __future__ import annotations
 
 import random
-from io import StringIO
-from typing import Any, Callable, Type, Dict, TypeVar
+from abc import abstractmethod
+from typing import Any, Dict, Tuple
 
-from core.engine import Context, TransformationChain
-from core.transforms import *
-from core.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, Substract, Xor
+from core.engine.Context import Context
+from core.engine.TransformationChain import TransformationChain
+from core.transformations.transforms import *
+from core.transformations.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, \
+    Substract, Xor
+from core.utils.StringBuilder import StringBuilder
 
 
 #####################
 # Convenience class #
 #####################
-
-
-class StringBuilder:
-    _file_str = None
-
-    def __init__(self):
-        self._file_str = StringIO()
-
-    def append(self, fmt: str) -> StringBuilder:
-        self._file_str.write(fmt)
-        return self
-
-    def to_string(self) -> str:
-        return self._file_str.getvalue()
-
-    def __str__(self) -> str:
-        return self.to_string()
-
-    def close(self) -> None:
-        self._file_str.close()
-
-    # with statement methods
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.close()
 
 
 ####################
@@ -64,9 +39,9 @@ class Visitor(ABC):
         for element in chain:
             self.visit_transform(element, sb)
 
-    T = TypeVar('T', bound=Transformation)
+    #T = TypeVar('T', bound=Transformation)
 
-    def visit_switch(self) -> Dict[Type[T], Callable[[T, StringBuilder], None]]:
+    def visit_switch(self) -> Dict[Transformation, Tuple[Transformation, StringBuilder, None]]:
         return {
             Add: self.visit_add,
             MulMod: self.visit_mul_mod,

@@ -1,4 +1,5 @@
-from core.transformations.transforms import Transformation, Permutation
+from core.transformations.transforms import Permutation
+from core.transformations.Transformations import Transformation
 
 
 class TransformationChain:

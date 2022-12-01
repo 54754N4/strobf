@@ -1,5 +1,5 @@
 from core.engine.PolymorphicEngine import PolymorphicEngine
-from core.utils.visitors import BashVisitor
+from core.utils.visitors import *
 
 if __name__ == '__main__':
     min_ops = 5
@@ -9,5 +9,6 @@ if __name__ == '__main__':
 
     text = "Hello World!"
     ctx = engine.transform(text)
-    visitor = BashVisitor()
+    # visitor = BashVisitor()
+    visitor = CSharpVisitor()
     print(visitor.visit(ctx))

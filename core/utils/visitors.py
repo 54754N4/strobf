@@ -26,11 +26,13 @@ class Visitor(ABC):
     def __init__(self):
         self.switcher = self.visit_switch()
 
-    def visit(self, ctx: Context) -> StringBuilder:
+    def visit(self, ctx: Context) -> str:
         t = self.initialise(ctx)
         self.visit_chain(ctx.reverse, t)
         self.finalise(t)
-        return t
+        result = t.to_string()
+        t.close()
+        return result
 
     def visit_chain(self, chain: TransformationChain, sb: StringBuilder) -> None:
         for element in chain:
@@ -131,7 +133,7 @@ class LanguageVisitor(Visitor, ABC):
 
     @staticmethod
     def hex(num: int) -> str:
-        return "0x" + "{:x}".format(num)
+        return "0x" + "{:04X}".format(num)
 
 
 ################
@@ -182,89 +184,174 @@ class BashVisitor(LanguageVisitor):
         return sb
 
     def finalise(self, sb: StringBuilder) -> None:
-        sb.append("\t{}[{}]={}\n".format(self.result_name, self.i, self.variable)) \
-            .append("done\n") \
-            .append("unset {}\n".format(self.i_name)) \
-            .append("unset {}\n".format(self.variable_name))
+        sb.append("\t{}[{}]={}\n".format(self.result_name, self.i, self.variable))
+        sb.append("done\n")
+        sb.append("unset {}\n".format(self.i_name))
+        sb.append("unset {}\n".format(self.variable_name))
         if self.has_permutations:
             sb.append("unset {}\n".format(self.temp_name))
-        sb.append(self.result_name + "=$(printf %b \"$(printf '\\\\U%x' \"${" + self.result_name + "[@]}\")\")\n") \
-            .append("echo " + self.result)
+        sb.append(self.result_name + "=$(printf %b \"$(printf '\\\\U%x' \"${" + self.result_name + "[@]}\")\")\n")
+        sb.append("echo " + self.result)
 
     def visit_add(self, add: Add, sb: StringBuilder) -> None:
         if add.value == 1:
             sb.append("\t" + self.ae("{}++", self.variable_name)).append("\n")
             return
-        sb.append("\t") \
-            .append(self.ae("{} += {}", self.variable_name, self.hex(add.value))) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} += {}", self.variable_name, self.hex(add.value)))
+        sb.append("\n")
 
     def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
-        sb.append("\t") \
-            .append(self.ae("{} = ({} * {}) % {}", self.variable_name, self.variable_name, self.hex(mm.value),
-                            self.hex(mm.modulo))) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} = ({} * {}) % {}", self.variable_name, self.variable_name, self.hex(mm.value),
+                          self.hex(mm.modulo)))
+        sb.append("\n")
 
     def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
         self.visit_mul_mod(mmi, sb)
 
     def visit_not(self, negation: Not, sb: StringBuilder) -> None:
-        sb.append("\t") \
-            .append(self.ae("{} = ~{} & {}", self.variable_name, self.variable_name, self.hex(negation.mask))) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} = ~{} & {}", self.variable_name, self.variable_name, self.hex(negation.mask)))
+        sb.append("\n")
 
     def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
-        sb.append("\t") \
-            .append(self.ae("{} = (({} >> {}) ^ ({} >> {})) & ((1 << {})-1)",
-                            self.temp_name,
-                            self.variable_name,
-                            self.hex(permutation.pos1),
-                            self.variable_name,
-                            self.hex(permutation.pos2),
-                            self.hex(permutation.bits))) \
-            .append("\n")
-        sb.append("\t") \
-            .append(
-            self.ae("{} ^= ({} << {}) | ({} << {})", self.variable_name, self.temp_name, self.hex(permutation.pos1),
-                    self.temp_name, self.hex(permutation.pos2))) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} = (({} >> {}) ^ ({} >> {})) & ((1 << {})-1)",
+                          self.temp_name,
+                          self.variable_name, self.hex(permutation.pos1),
+                          self.variable_name, self.hex(permutation.pos2),
+                          self.hex(permutation.bits)))
+        sb.append("\n")
+        sb.append("\t")
+        sb.append(
+            self.ae("{} ^= ({} << {}) | ({} << {})",
+                    self.variable_name,
+                    self.temp_name, self.hex(permutation.pos1),
+                    self.temp_name, self.hex(permutation.pos2)))
+        sb.append("\n")
 
     def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
         mask = self.hex(rol.mask)
-        sb.append("\t") \
-            .append(self.ae("{} = ((({} & {}) >> {}) | ({} << {})) & {}",
-                            self.variable_name,
-                            self.variable_name,
-                            self.mask,
-                            self.hex(rol.lhs()),
-                            self.variable_name,
-                            self.hex(rol.rhs),
-                            mask)) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} = ((({} & {}) >> {}) | ({} << {})) & {}",
+                          self.variable_name,
+                          self.variable_name, mask,
+                          self.hex(rol.lhs()),
+                          self.variable_name, self.hex(rol.rhs()),
+                          mask))
+        sb.append("\n")
 
     def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
         mask = self.hex(ror.mask)
-        sb.append("\t") \
-            .append(self.ae("{} = ((({} & {}) << {}) | ({} >> {})) & {}",
-                            self.variable_name,
-                            self.variable_name,
-                            self.mask,
-                            self.hex(ror.lhs()),
-                            self.variable_name,
-                            self.hex(ror.rhs()),
-                            mask)) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} = ((({} & {}) << {}) | ({} >> {})) & {}",
+                          self.variable_name,
+                          self.variable_name, mask,
+                          self.hex(ror.lhs()),
+                          self.variable_name, self.hex(ror.rhs()),
+                          mask))
+        sb.append("\n")
 
     def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
         if sub.value == 1:
             sb.append("\t").append(self.ae("{}--", self.variable_name)).append("\n")
             return
-        sb.append("\t") \
-            .append(self.ae("{} -= {}", self.variable_name, self.hex(sub.value))) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} -= {}", self.variable_name, self.hex(sub.value)))
+        sb.append("\n")
 
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
-        sb.append("\t") \
-            .append(self.ae("{} ^= {}", self.variable_name, self.hex(xor.value))) \
-            .append("\n")
+        sb.append("\t")
+        sb.append(self.ae("{} ^= {}", self.variable_name, self.hex(xor.value)))
+        sb.append("\n")
 
+##############
+# C# Visitor #
+##############
+
+
+class CSharpVisitor(LanguageVisitor):
+
+    def __init__(self):
+        super().__init__()
+        self.variable = None
+        self.temp = None
+        self.i = None
+        self.result = None
+
+    def initialise(self, ctx: Context) -> StringBuilder:
+        # Generate var names
+        self.variable = self.generate_name()
+        self.temp = self.generate_name()
+        self.i = self.generate_name()
+        self.result = "str"
+        # Write bytes in string
+        sb = StringBuilder()
+        sb.append("var " + self.result + " = new System.Text.StringBuilder(\"")
+        for b in ctx.bytes:
+            sb.append("\\u" + "{:04x}".format(b))
+        sb.append("\");\n")
+        # Write for loop
+        permutation = ""
+        if ctx.reverse.contains_permutation():
+            permutation = ", " + self.temp
+        sb.append("for (int {}=0, {}{}; {} < {}.Length; {}++) {{\n".format(self.i, self.variable, permutation, self.i, self.result, self.i))
+        sb.append("\t" + self.variable + " = " + self.result + "[" + self.i + "];\n")
+        return sb
+
+    def finalise(self, sb: StringBuilder) -> None:
+        sb.append("\t{}[{}] = (char) {};\n".format(self.result, self.i, self.variable))
+        sb.append("}\n")
+        sb.append("Console.WriteLine(" + self.result + ");")
+
+    def visit_add(self, add: Add, sb: StringBuilder) -> None:
+        if add.value == 1:
+            sb.append("\t").append(self.variable).append("++;\n")
+            return
+        sb.append("\t" + self.variable + " += " + self.hex(add.value) + ";\n")
+
+    def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = ")
+        sb.append("(" + self.variable + " * " + self.hex(mm.value) + ") % " + self.hex(mm.modulo))
+        sb.append(";\n")
+
+    def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
+        self.visit_mul_mod(mmi, sb)
+
+    def visit_not(self, negation: Not, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = ~" + self.variable + " & " + self.hex(negation.mask) + ";\n")
+
+    def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
+        sb.append("\t" + self.temp + " = ")
+        sb.append("((" + self.variable + " >> " + self.hex(permutation.pos1) + ")")
+        sb.append(" ^ (" + self.variable + " >> " + self.hex(permutation.pos2) + ")) & ((1 << ")
+        sb.append(self.hex(permutation.bits) + ") - 1);\n")
+        sb.append("\t" + self.variable + " ^= ")
+        sb.append("(" + self.temp + " << " + self.hex(permutation.pos1) + ") | (" + self.temp + " << ")
+        sb.append(self.hex(permutation.pos2) + ");\n")
+
+    def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
+        mask = self.hex(rol.mask)
+        sb.append("\t" + self.variable + " = ")
+        sb.append("(((" + self.variable + " & " + mask + ") >> " + self.hex(rol.lhs()) + ") | (")
+        sb.append(self.variable + " << " + self.hex(rol.rhs()) + ")) & " + mask + ";\n")
+
+    def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
+        mask = self.hex(ror.mask)
+        sb.append("\t" + self.variable + " = ")
+        sb.append("(((" + self.variable + " & " + mask + ") << " + self.hex(ror.lhs()) + ") | (")
+        sb.append(self.variable + " >> " + self.hex(ror.rhs()) + ")) & " + mask + ";\n")
+
+    def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
+        if sub.value == 1:
+            sb.append("\t" + self.variable + "--;\n")
+            return
+        sb.append("\t" + self.variable + " -= " + self.hex(sub.value) + ";\n")
+
+    def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
+
+##############
+# C# Visitor #
+##############

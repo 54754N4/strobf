@@ -1,8 +1,8 @@
 from __future__ import annotations
 from abc import ABC
 
-from core.transformations.Exceptions import ArithmeticException
-from core.transformations.Transformations import Transformation
+from core.utils.Exceptions import ArithmeticException
+from core.transformations.Transformation import Transformation
 
 
 ####################

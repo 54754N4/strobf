@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from core.transformations.Exceptions import ArithmeticException
+from core.utils.Exceptions import ArithmeticException
 
 
 class Transformation(ABC):

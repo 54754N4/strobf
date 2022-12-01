@@ -1,6 +1,6 @@
 from typing import List
 
-from core.engine.TransformationChain import TransformationChain
+from core.transformations.TransformationChain import TransformationChain
 
 
 class Context:

@@ -1,5 +1,5 @@
 from core.engine.PolymorphicEngine import PolymorphicEngine
-from core.utils.visitors import *
+from core.visitors.visitors import *
 
 if __name__ == '__main__':
     min_ops = 5

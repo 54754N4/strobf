@@ -2,20 +2,12 @@ from __future__ import annotations
 
 import random
 from abc import abstractmethod
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, TypeVar, Callable, Type
 
-from core.engine.Context import Context
-from core.engine.TransformationChain import TransformationChain
+from core.utils.Context import Context
+from core.transformations.TransformationChain import TransformationChain
 from core.transformations.transforms import *
-from core.transformations.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, \
-    Substract, Xor
 from core.utils.StringBuilder import StringBuilder
-
-
-#####################
-# Convenience class #
-#####################
-
 
 ####################
 # Abstract Classes #
@@ -23,6 +15,7 @@ from core.utils.StringBuilder import StringBuilder
 
 
 class Visitor(ABC):
+    T = TypeVar('T', bound=Transformation)
 
     def __init__(self):
         self.switcher = self.visit_switch()
@@ -39,9 +32,7 @@ class Visitor(ABC):
         for element in chain:
             self.visit_transform(element, sb)
 
-    #T = TypeVar('T', bound=Transformation)
-
-    def visit_switch(self) -> Dict[Transformation, Tuple[Transformation, StringBuilder, None]]:
+    def visit_switch(self) -> Dict[Type[T], Callable[[T, StringBuilder], None]]:
         return {
             Add: self.visit_add,
             MulMod: self.visit_mul_mod,
@@ -376,7 +367,13 @@ class CVisitor(LanguageVisitor):
         sb.append("wchar_t" + self.result + "[" + str(len(ctx.bytes)) + "] = {")
         sb.append(",".join([self.hex(b) for b in ctx.bytes]))
         sb.append("};\n")
-
+        # Write for loop
+        permutation = ""
+        if ctx.reverse.contains_permutation():
+            permutation = ", " + self.temp
+        sb.append("for (unsigned int {}=0, {}{}; {} < {}; {}++) {{\n".format(self.i, self.variable, permutation, self.i, len(ctx.bytes), self.i))
+        sb.append("\t" + self.variable + " = " + self.result + "[" + self.i + "];\n")
+        return sb
 
     def finalise(self, sb: StringBuilder) -> None:
         pass

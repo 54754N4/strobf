@@ -4,8 +4,8 @@ import os
 from random import randint
 from typing import Dict, Callable
 
-from core.engine.Context import Context
-from core.engine.TransformationChain import TransformationChain
+from core.utils.Context import Context
+from core.transformations.TransformationChain import TransformationChain
 from core.transformations.transforms import *
 
 

@@ -2,11 +2,13 @@ from __future__ import annotations
 
 import random
 from io import StringIO
-from typing import Any, Callable, Type, Dict, TypeVar
+from typing import Any, Dict, Tuple
 
-from core.engine.engine import Context, TransformationChain
+from core.engine.Context import Context
+from core.engine.TransformationChain import TransformationChain
 from core.transformations.transforms import *
-from core.transformations.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, Substract, Xor
+from core.transformations.transforms import Add, MulMod, MulModInv, Not, Permutation, RotateLeft, RotateRight, \
+    Substract, Xor
 
 
 #####################
@@ -62,9 +64,9 @@ class Visitor(ABC):
         for element in chain:
             self.visit_transform(element, sb)
 
-    T = TypeVar('T', bound=Transformation)
+    #T = TypeVar('T', bound=Transformation)
 
-    def visit_switch(self) -> Dict[Type[T], Callable[[T, StringBuilder], None]]:
+    def visit_switch(self) -> Dict[Transformation, Tuple[Transformation, StringBuilder, None]]:
         return {
             Add: self.visit_add,
             MulMod: self.visit_mul_mod,

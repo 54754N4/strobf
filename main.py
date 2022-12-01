@@ -1,4 +1,4 @@
-from core.engine.engine import PolymorphicEngine
+from core.engine.PolymorphicEngine import PolymorphicEngine
 from core.utils.visitors import BashVisitor
 
 if __name__ == '__main__':

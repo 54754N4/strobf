@@ -11,5 +11,6 @@ if __name__ == '__main__':
     ctx = engine.transform(text)
     # visitor = BashVisitor()
     # visitor = CSharpVisitor()
-    visitor = CVisitor()
+    # visitor = CVisitor()
+    visitor = JavaScripVisitor()
     print(visitor.visit(ctx))

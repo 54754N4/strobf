@@ -13,5 +13,6 @@ if __name__ == '__main__':
     # visitor = CSharpVisitor()
     # visitor = CVisitor()
     # visitor = JavaScriptVisitor()
-    visitor = JavaVisitor()
+    # visitor = JavaVisitor()
+    visitor = Masm64Visitor()
     print(visitor.visit(ctx))

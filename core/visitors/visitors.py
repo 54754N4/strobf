@@ -9,6 +9,7 @@ from core.transformations.TransformationChain import TransformationChain
 from core.transformations.transforms import *
 from core.utils.StringBuilder import StringBuilder
 
+
 ####################
 # Abstract Classes #
 ####################
@@ -257,6 +258,7 @@ class BashVisitor(LanguageVisitor):
         sb.append(self.ae("{} ^= {}", self.variable_name, self.hex(xor.value)))
         sb.append("\n")
 
+
 ##############
 # C# Visitor #
 ##############
@@ -286,7 +288,8 @@ class CSharpVisitor(LanguageVisitor):
         permutation = ""
         if ctx.reverse.contains_permutation():
             permutation = ", " + self.temp
-        sb.append("for (int {}=0, {}{}; {} < {}.Length; {}++) {{\n".format(self.i, self.variable, permutation, self.i, self.result, self.i))
+        sb.append("for (int {}=0, {}{}; {} < {}.Length; {}++) {{\n".format(self.i, self.variable, permutation, self.i,
+                                                                           self.result, self.i))
         sb.append("\t" + self.variable + " = " + self.result + "[" + self.i + "];\n")
         return sb
 
@@ -342,6 +345,7 @@ class CSharpVisitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
 
+
 #############
 # C Visitor #
 #############
@@ -371,7 +375,8 @@ class CVisitor(LanguageVisitor):
         permutation = ""
         if ctx.reverse.contains_permutation():
             permutation = ", " + self.temp
-        sb.append("for (unsigned int {}=0, {}{}; {} < {}; {}++) {{\n".format(self.i, self.variable, permutation, self.i, len(ctx.bytes), self.i))
+        sb.append("for (unsigned int {}=0, {}{}; {} < {}; {}++) {{\n".format(self.i, self.variable, permutation, self.i,
+                                                                             len(ctx.bytes), self.i))
         sb.append("\t" + self.variable + " = " + self.result + "[" + self.i + "];\n")
         return sb
 
@@ -426,6 +431,7 @@ class CVisitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
 
+
 ##############
 # JS Visitor #
 ##############
@@ -454,7 +460,8 @@ class JavaScriptVisitor(LanguageVisitor):
         permutation = ""
         if ctx.reverse.contains_permutation():
             permutation = ", " + self.temp
-        sb.append("for (var {}=0, {}{}; {} < {}.length; {}++) {{\n".format(self.i, self.variable, permutation, self.i, self.result, self.i))
+        sb.append("for (var {}=0, {}{}; {} < {}.length; {}++) {{\n".format(self.i, self.variable, permutation, self.i,
+                                                                           self.result, self.i))
         sb.append("\t" + self.variable + " = " + self.result + "[" + self.i + "];\n")
         return sb
 
@@ -506,6 +513,7 @@ class JavaScriptVisitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
 
+
 ################
 # Java Visitor #
 ################
@@ -535,7 +543,8 @@ class JavaVisitor(LanguageVisitor):
         permutation = ""
         if ctx.reverse.contains_permutation():
             permutation = ", " + self.temp
-        sb.append("for (int {}=0, {}{}; {} < {}.length(); {}++) {{\n".format(self.i, self.variable, permutation, self.i, self.result, self.i))
+        sb.append("for (int {}=0, {}{}; {} < {}.length(); {}++) {{\n".format(self.i, self.variable, permutation, self.i,
+                                                                             self.result, self.i))
         sb.append("\t" + self.variable + " = " + self.result + ".charAt(" + self.i + ");\n")
         return sb
 
@@ -584,4 +593,214 @@ class JavaVisitor(LanguageVisitor):
 
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + ";\n")
+
+
+##################
+# MASM64 Visitor #
+##################
+
+
+class Masm64Visitor(LanguageVisitor):
+    # Static variables related to masm
+    IMMEDIATE_SIZES = [2, 4, 8, 16]
+    DATA_TYPES = ["db", "dw", "dd", "dq"]
+    DATA_TYPES_PTR = ["byte", "word", "dword", "qword"]
+    REGISTERS = [
+        ["al", "ax", "eax", "rax"],
+        ["bl", "bx", "ebx", "rbx"],
+        ["cl", "cx", "ecx", "rcx"],
+        ["dl", "dx", "edx", "rdx"],
+        ["dil", "di", "edi", "rdi"],
+        ["sil", "si", "esi", "rsi"],
+        ["bpl", "bp", "ebp", "rbp"],
+        ["spl", "sp", "esp", "rsp"],
+        ["r8l", "r8w", "r8d", "r8"],
+        ["r9l", "r9w", "r9d", "r9"],
+        ["r10l", "r10w", "r10d", "r10"],
+        ["r11l", "r11w", "r11d", "r11"],
+        ["r12l", "r12w", "r12d", "r12"],
+        ["r13l", "r13w", "r13d", "r13"],
+        ["r14l", "r14w", "r14d", "r14"],
+        ["r15l", "r15w", "r15d", "r15"],
+    ]
+
+    RAX = 0
+    RBX = 1
+    RCX = 2
+    RDX = 3
+    RDI = 4
+    RSI = 5
+    RBP = 6
+    RSP = 7
+    R8 = 8
+    R9 = 9
+    R10 = 10
+    R11 = 11
+    R12 = 12
+    R13 = 13
+    R14 = 14
+    R15 = 15
+
+    def __init__(self):
+        super().__init__()
+        self.block = None
+        self.size = None
+        self.shadow_space = None
+        self.increment = None
+        self.result = None
+        self.loop_name = None
+        self.i = None
+        self.variable = None
+
+    # Convenience methods
+
+    def reg(self, id: int) -> str:
+        return self.REGISTERS[id][self.block]
+
+    def hex(self, l: int) -> str:
+        return ("0{:0" + str(self.IMMEDIATE_SIZES[self.block]) + "x}h").format(l)
+
+    # Visitor methods
+
+    # RBX = data array address
+    # RCX = i loop counter
+    # RDX = data variable for transformations
+    def initialise(self, ctx: Context) -> StringBuilder:
+        # Calculate correct data sizes and registers
+        self.block = (ctx.max_bits - 1) // 8
+        self.increment = self.IMMEDIATE_SIZES[self.block] // 2
+        self.result = "string"
+        self.loop_name = self.generate_name()
+        self.shadow_space = 32
+        self.i = self.reg(self.RCX)
+        self.variable = self.reg(self.RDX)
+        self.size = len(ctx.bytes)
+        sb = StringBuilder()
+        # Write imports
+        sb.append("extern GetStdHandle: proc\n"
+                  + "extern WriteFile: proc\n"
+                  + "extern GetFileType: proc\n"
+                  + "extern WriteConsoleW: proc\n\n")
+        # Write bytes in data section
+        sb.append(".data?\n"
+                  + "\tstdout\tdq ?\n"
+                  + "\twritten\tdq ?\n")
+        sb.append(".data\n")
+        sb.append("\t" + self.result + " " + self.DATA_TYPES[self.block] + " ")
+        sb.append(",".join([self.hex(b) for b in ctx.bytes]))
+        sb.append("\n\tlen\tequ $-" + self.result + "\n")
+        # Write code section and prolog
+        sb.append(".code\n")
+        sb.append("main proc\n")
+        sb.append("\tpush\trbp\n")
+        sb.append("\tmov\trbp, rsp\n")
+        sb.append("\tsub\trsp, {}\n".format(self.shadow_space))
+        sb.append("\tand\trsp, -10h\n\n")
+        # Loop initialisation
+        sb.append("\tmov\trbx, offset {}\n".format(self.result))
+        sb.append("\txor\trcx, rcx\n")
+        sb.append(self.loop_name + ":\n")
+        sb.append("\txor\trax, rax\n"
+                  + "\txor\trdx, rdx\n"
+                  + "\txor\tr8, r8\n"
+                  + "\txor\tr9, r9\n"
+                  + "\txor\tr10, r10\n")
+        sb.append(
+            "\tmov\t{}, {} ptr [rbx + rcx*{}]\n".format(self.variable, self.DATA_TYPES_PTR[self.block], self.increment))
+        return sb
+
+    def finalise(self, sb: StringBuilder) -> None:
+        # End of loop
+        sb.append(
+            "\tmov\t{} ptr [rbx + rcx*{}], {}\n".format(self.DATA_TYPES_PTR[self.block], self.increment, self.variable))
+        sb.append("\tinc\t{}\n".format(self.i))
+        sb.append("\tcmp\t{}, {}\n".format(self.i, self.size))
+        sb.append("\tjne\t{}\n\n".format(self.loop_name))
+        # Print output accordingly
+        sb.append("\t; Printing code\n"
+                  + "\txor\trax, rax\n"
+                  + "\txor\trcx, rcx\n"
+                  + "\txor\trdx, rdx\n"
+                  + "\txor\tr8, r8\n"
+                  + "\txor\tr9, r9\n"
+                  + "\tmov\trcx, -11\n"
+                  + "\tcall\tGetStdHandle\n"
+                  + "\tmov\t[stdout], rax\n"
+                  + "\tmov\trcx, rax\n"
+                  + "\tcall\tGetFileType\n"
+                  + "\tcmp\trax, 1\n"
+                  + "\tje\tfileWrite\n"
+                  + "\tmov\trcx, [stdout]\n"
+                  + "\tmov\trdx, rbx\n"
+                  + "\tmov\tr8, len\n"
+                  + "\tmov\tr9, written\n"
+                  + "\tcall\tWriteConsoleW\n"
+                  + "\tjmp\tepilog\n"
+                  + "fileWrite:\n"
+                  + "\tmov\trcx, [stdout]\n"
+                  + "\tmov\trdx, rbx\n"
+                  + "\tmov\tr8, len\n"
+                  + "\tmov\tr9, written\n"
+                  + "\tcall\tWriteFile\n"
+                  + "epilog:\n"
+                  + "\tadd\trsp, " + str(self.shadow_space) + "\n"
+                  + "\tmov\trsp, rbp\n"
+                  + "\tpop\trbp\n"
+                  + "\tret\n"
+                  + "main endp\n"
+                  + "end")
+
+    def visit_add(self, add: Add, sb: StringBuilder) -> None:
+        sb.append("\tadd\t{}, {}\n".format(self.variable, add.value))
+
+    def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
+        rax, rdx, r8 = self.reg(self.RAX), self.reg(self.RDX), self.reg(self.R8)
+        # Multiplication
+        sb.append("\tmov\t{}, {}\n".format(rax, rdx))
+        sb.append("\txor\t{}, {}\n".format(rdx, rdx))
+        sb.append("\tmov\t{}, {}\n".format(r8, mm.value))
+        sb.append("\tmul\t{}\n".format(r8))
+        sb.append("\tmov\t{}, {}\n".format(rdx, rax))
+        # Remainder
+        sb.append("\tmov\t{}, {}\n".format(rax, rdx))
+        sb.append("\txor\t{}, {}\n".format(rdx, rdx))
+        sb.append("\tmov\t{}, {}\n".format(r8, mm.modulo))
+        sb.append("\tdiv\t{}\n".format(r8))
+        sb.append("\tmov\t{}, {}\n".format(rdx, rax))
+
+    def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
+        self.visit_mul_mod(mmi, sb)
+
+    def visit_not(self, negation: Not, sb: StringBuilder) -> None:
+        sb.append("\tnot\t{}\n".format(self.variable))
+
+    def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
+        r8, r9, r10 = self.reg(self.R8), self.reg(self.R9), self.reg(self.R10)
+        sb.append("\tmov\t{}, {}\n".format(r8, self.variable))
+        sb.append("\tshr\t{}, {}\n".format(r8, permutation.pos1))
+        sb.append("\tmov\t{}, {}\n".format(r9, self.variable))
+        sb.append("\tshr\t{}, {}\n".format(r9, permutation.pos2))
+        sb.append("\txor\t{}, {}\n".format(r8, r9))
+        sb.append("\tmov\t{}, {}\n".format(r9, 1))
+        sb.append("\tshl\t{}, {}\n".format(r9, permutation.bits))
+        sb.append("\tsub\t{}, {}\n".format(r9, 1))
+        sb.append("\tand\t{}, {}\n".format(r8, r9))
+        sb.append("\tmov\t{}, {}\n".format(r9, r8))
+        sb.append("\tshl\t{}, {}\n".format(r9, permutation.pos1))
+        sb.append("\tmov\t{}, {}\n".format(r10, r8))
+        sb.append("\tshl\t{}, {}\n".format(r10, permutation.pos2))
+        sb.append("\tor\t{}, {}\n".format(r9, r10))
+        sb.append("\txor\t{}, {}\n".format(self.variable, r9))
+
+    def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
+        sb.append("\trol\t{}, {}\n".format(self.variable, rol.value))
+
+    def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
+        sb.append("\tror\t{}, {}\n".format(self.variable, ror.value))
+
+    def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
+        sb.append("\tsub\t{}, {}\n".format(self.variable, sub.value))
+
+    def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
+        sb.append("\txor\t{}, {}\n".format(self.variable, xor.value))
 

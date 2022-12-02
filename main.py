@@ -12,5 +12,6 @@ if __name__ == '__main__':
     # visitor = BashVisitor()
     # visitor = CSharpVisitor()
     # visitor = CVisitor()
-    visitor = JavaScripVisitor()
+    # visitor = JavaScriptVisitor()
+    visitor = JavaVisitor()
     print(visitor.visit(ctx))

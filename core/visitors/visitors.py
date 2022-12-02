@@ -804,3 +804,93 @@ class Masm64Visitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\txor\t{}, {}\n".format(self.variable, xor.value))
 
+######################
+# PowerShell Visitor #
+######################
+
+
+class PowerShellVisitor(LanguageVisitor):
+
+    def __init__(self):
+        super().__init__()
+        self.variable = None
+        self.temp = None
+        self.i = None
+        self.array = None
+        self.result = None
+        self.mask = None
+        self.has_permutation = None
+
+    def initialise(self, ctx: Context) -> StringBuilder:
+        # Generate variable names
+        self.variable = "$" + self.generate_name()
+        self.temp = "$" + self.generate_name()
+        self.i = "$" + self.generate_name()
+        self.array = "$" + self.generate_name()
+        self.result = "$string"
+        self.mask = self.hex(ctx.mask)
+        self.has_permutation = ctx.reverse.contains_permutation()
+        # Write bytes in string
+        sb = StringBuilder()
+        sb.append("[uint64[]]" + self.array + " = ")
+        sb.append(",".join([self.hex(b) for b in ctx.bytes]))
+        sb.append("\n" + self.result + " = [System.Text.StringBuilder]::new()\n")
+        # Write for loop
+        sb.append("for ({} = 0; {} -lt {}.Length; {}++) {{\n".format(self.i, self.i, self.array, self.i))
+        sb.append("\t" + self.variable + " = " + self.array + "[" + self.i + "]\n")
+        return sb
+
+    def finalise(self, sb: StringBuilder) -> None:
+        delete_format = "{0} = [void]{0}\n"
+        sb.append("\t[void]{}.Append([char]({} -band {}))\n".format(self.result, self.variable, self.mask))
+        sb.append("}\n")
+        sb.append(delete_format.format(self.variable))
+        sb.append(delete_format.format(self.i))
+        sb.append(delete_format.format(self.array))
+        if self.has_permutation:
+            sb.append(delete_format.format(self.temp))
+        sb.append("{} = {}.ToString()\n".format(self.result, self.result))
+        sb.append("Write-Host " + self.result)
+
+    def visit_add(self, add: Add, sb: StringBuilder) -> None:
+        if add.value == 1:
+            sb.append("\t" + self.variable + "++\n")
+            return
+        sb.append("\t" + self.variable + " += " + self.hex(add.value) + "\n")
+
+    def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = (" + self.variable + " * " + self.hex(mm.value) + ") % ")
+        sb.append(self.hex(mm.modulo) + "\n")
+
+    def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
+        self.visit_mul_mod(mmi, sb)
+
+    def visit_not(self, negation: Not, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = -bnot " + self.variable + " -band " + self.hex(negation.mask) + "\n")
+
+    def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
+        sb.append("\t" + self.temp + " = ((" + self.variable + " -shr " + self.hex(permutation.pos1) + " ) -bxor (")
+        sb.append(self.variable + " -shr " + self.hex(permutation.pos2) + ")) -band ((1 -shl ")
+        sb.append(self.hex(permutation.bits) + ") - 1)\n")
+        sb.append("\t" + self.variable + " = " + self.variable + " -bxor ((" + self.temp + " -shl ")
+        sb.append(self.hex(permutation.pos1) + ") -bor (" + self.temp + " -shl " + self.hex(permutation.pos2) + "))\n")
+
+    def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
+        mask = self.hex(rol.mask)
+        sb.append("\t" + self.variable + " = (((" + self.variable + " -band " + mask + ") -shr " + self.hex(rol.lhs()))
+        sb.append(") -bor (" + self.variable + " -shl " + self.hex(rol.rhs()) + ")) -band " + mask + "\n")
+
+    def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
+        mask = self.hex(ror.mask)
+        sb.append("\t" + self.variable + " = (((" + self.variable + " -band " + mask + ") -shl " + self.hex(ror.lhs()))
+        sb.append(") -bor (" + self.variable + " -shr " + self.hex(ror.rhs()) + ")) -band " + mask + "\n")
+
+    def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
+        if sub.value == 1:
+            sb.append("\t" + self.variable + "--\n")
+            return
+        sb.append("\t" + self.variable + " -= " + self.hex(sub.value) + "\n")
+
+    def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = " + self.variable + " -bxor " + self.hex(xor.value) + "\n")
+

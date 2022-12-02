@@ -14,5 +14,6 @@ if __name__ == '__main__':
     # visitor = CVisitor()
     # visitor = JavaScriptVisitor()
     # visitor = JavaVisitor()
-    visitor = Masm64Visitor()
+    # visitor = Masm64Visitor()
+    visitor = PowerShellVisitor()
     print(visitor.visit(ctx))

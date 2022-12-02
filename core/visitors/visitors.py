@@ -438,6 +438,7 @@ class CVisitor(LanguageVisitor):
 
 
 class JavaScriptVisitor(LanguageVisitor):
+
     def __init__(self):
         super().__init__()
         self.variable = None
@@ -894,3 +895,81 @@ class PowerShellVisitor(LanguageVisitor):
     def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
         sb.append("\t" + self.variable + " = " + self.variable + " -bxor " + self.hex(xor.value) + "\n")
 
+##################
+# Python Visitor #
+##################
+
+
+class PythonVisitor(LanguageVisitor):
+
+    def __init__(self):
+        super().__init__()
+        self.variable = None
+        self.temp = None
+        self.i = None
+        self.result = None
+        self.mask = None
+        self.has_permutation = None
+
+    def initialise(self, ctx: Context) -> StringBuilder:
+        # Generate var names
+        self.variable = self.generate_name()
+        self.temp = self.generate_name()
+        self.i = self.generate_name()
+        self.mask = self.hex(ctx.mask)
+        self.result = "string"
+        self.has_permutation = ctx.reverse.contains_permutation()
+        # Write bytes in string
+        sb = StringBuilder()
+        sb.append(self.result + " = [")
+        sb.append(",".join([self.hex(b) for b in ctx.bytes]))
+        sb.append("]\n")
+        # Write for loop
+        sb.append("for {} in range(len({})):\n".format(self.i, self.result))
+        sb.append("\t" + self.variable + " = " + self.result + "[" + self.i + "]\n")
+        return sb
+
+    def finalise(self, sb: StringBuilder) -> None:
+        sb.append("\t{}[{}] = chr({} & {})\n".format(self.result, self.i, self.variable, self.mask))
+        if self.has_permutation:
+            sb.append("del {}, {}, {}\n".format(self.i, self.variable, self.temp))
+        else:
+            sb.append("del {}, {}\n".format(self.i, self.variable))
+        sb.append("{} = ''.join({})\n".format(self.result, self.result))
+        sb.append("print(" + self.result + ")")
+
+    def visit_add(self, add: Add, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " += " + self.hex(add.value) + "\n")
+
+    def visit_mul_mod(self, mm: MulMod, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = (" + self.variable + " * " + self.hex(mm.value) + ") % ")
+        sb.append(self.hex(mm.modulo) + "\n")
+
+    def visit_mul_mod_inv(self, mmi: MulModInv, sb: StringBuilder) -> None:
+        self.visit_mul_mod(mmi, sb)
+
+    def visit_not(self, negation: Not, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " = ~" + self.variable + " & " + self.hex(negation.mask) + "\n")
+
+    def visit_permutation(self, permutation: Permutation, sb: StringBuilder) -> None:
+        sb.append("\t" + self.temp + " = ((" + self.variable + " >> " + self.hex(permutation.pos1) + ") ^ (")
+        sb.append(self.variable + " >> " + self.hex(permutation.pos2) + ")) & ((1 << " + self.hex(permutation.bits))
+        sb.append(") - 1)\n")
+        sb.append("\t" + self.variable + " ^= (" + self.temp + " << " + self.hex(permutation.pos1) + ") | (")
+        sb.append(self.temp + " << " + self.hex(permutation.pos2) + ")\n")
+
+    def visit_rotate_left(self, rol: RotateLeft, sb: StringBuilder) -> None:
+        mask = self.hex(rol.mask)
+        sb.append("\t" + self.variable + " = (((" + self.variable + " & " + mask + ") >> " + self.hex(rol.lhs()))
+        sb.append(") | (" + self.variable + " << " + self.hex(rol.rhs()) + ")) & " + mask + "\n")
+
+    def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
+        mask = self.hex(ror.mask)
+        sb.append("\t" + self.variable + " = (((" + self.variable + " & " + mask + ") << " + self.hex(ror.lhs()))
+        sb.append(") | (" + self.variable + " >> " + self.hex(ror.rhs()) + ")) & " + mask + "\n")
+
+    def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " -= " + self.hex(sub.value) + "\n")
+
+    def visit_xor(self, xor: Xor, sb: StringBuilder) -> None:
+        sb.append("\t" + self.variable + " ^= " + self.hex(xor.value) + "\n")

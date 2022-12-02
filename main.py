@@ -2,7 +2,7 @@ from core.engine.PolymorphicEngine import PolymorphicEngine
 from core.visitors.visitors import *
 
 if __name__ == '__main__':
-    min_ops = 5
+    min_ops = 10
     max_ops = 10
     max_bits = 16
     engine = PolymorphicEngine(min_ops, max_ops, max_bits)
@@ -15,5 +15,6 @@ if __name__ == '__main__':
     # visitor = JavaScriptVisitor()
     # visitor = JavaVisitor()
     # visitor = Masm64Visitor()
-    visitor = PowerShellVisitor()
+    # visitor = PowerShellVisitor()
+    visitor = PythonVisitor()
     print(visitor.visit(ctx))

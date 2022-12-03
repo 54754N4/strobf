@@ -1,7 +1,7 @@
 import unittest
 
-from core.transformations.transforms import *
-from core.transformations.TransformationChain import TransformationChain
+from core.transforms import *
+from core.transforms import Transformation, TransformationChain
 
 
 class MyTestCase(unittest.TestCase):

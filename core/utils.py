@@ -3,6 +3,10 @@ from __future__ import annotations
 from io import StringIO
 
 
+class ArithmeticException(Exception):
+    pass
+
+
 class StringBuilder:
     _file_str = None
 

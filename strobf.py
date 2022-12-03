@@ -1,5 +1,5 @@
-from core.engine.PolymorphicEngine import PolymorphicEngine
-from core.engine.visitors import *
+from core.engine import PolymorphicEngine
+from core.visitors import *
 from argparse import ArgumentParser
 import sys
 
@@ -8,8 +8,8 @@ if __name__ == '__main__':
         prog="strobj",
         description="""
             Obfuscates a string using a polymorphic engine into different languages. Generates a
-            decryption/deobfuscation routine in any of the following in the target languages (which can be specified
-            to the -t or --target parameter):
+            decryption/deobfuscation routine in any of the following target languages (which can be specified
+            using the -t or --target parameter):
             bash, c#, c_sharp, csharp, c, cpp, c++, javascript, js, java, masm64, powershell, ps, python, py
         """
     )

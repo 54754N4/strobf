@@ -2,11 +2,22 @@ from __future__ import annotations
 
 import os
 from random import randint
-from typing import Dict, Callable
 
-from core.engine.Context import Context
-from core.transformations.TransformationChain import TransformationChain
-from core.transformations.transforms import *
+from typing import List, Dict, Callable
+
+from core.transforms import TransformationChain, Transformation, Add, Not, RotateLeft, RotateRight, Substract, Xor, \
+    Permutation, MulMod, MulModInv
+from core.utils import ArithmeticException
+
+
+class Context:
+    def __init__(self, max_bits: int, bytes_in: List[int], mask: int,
+                 forward: TransformationChain, reverse: TransformationChain):
+        self.max_bits = max_bits
+        self.bytes = bytes_in
+        self.mask = mask
+        self.forward = forward
+        self.reverse = reverse
 
 
 class PolymorphicEngine:
@@ -140,4 +151,3 @@ class PolymorphicEngine:
 
     def random_max(self) -> int:
         return self.next_long(self.max())
-

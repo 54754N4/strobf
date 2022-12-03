@@ -1,13 +1,12 @@
 from __future__ import annotations
 
 import random
-from abc import abstractmethod
 from typing import Any, Dict, TypeVar, Callable, Type
 
-from core.engine.Context import Context
-from core.transformations.TransformationChain import TransformationChain
-from core.transformations.transforms import *
-from core.utils.StringBuilder import StringBuilder
+from core.engine import Context
+from core.transforms import *
+from core.transforms import Transformation, TransformationChain
+from core.utils import StringBuilder
 
 
 ####################

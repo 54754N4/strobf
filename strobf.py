@@ -5,7 +5,7 @@ import sys
 
 if __name__ == '__main__':
     parser = ArgumentParser(
-        prog="strobj",
+        prog="strobf",
         description="""
             Obfuscates a string using a polymorphic engine into different languages. Generates a
             decryption/deobfuscation routine in any of the following target languages (which can be specified

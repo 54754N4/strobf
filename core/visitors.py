@@ -168,7 +168,7 @@ class BashVisitor(LanguageVisitor):
         sb = StringBuilder()
         sb.append(self.result_name + "=( ")
         sb.append(" ".join([self.hex(b) for b in ctx.bytes]))
-        sb.append(")\n")
+        sb.append(" )\n")
         # Write for loop
         sb.append("for {} in ${{!{}[@]}}; do\n".format(self.i_name, self.result_name))
         sb.append("\t" + self.variable_name + "=${" + self.result_name + "[" + self.i + "]}\n")
@@ -413,13 +413,13 @@ class CVisitor(LanguageVisitor):
         mask = self.hex(rol.mask)
         sb.append("\t" + self.variable + " = ")
         sb.append("(((" + self.variable + " & " + mask + ") >> " + self.hex(rol.lhs()) + ") | (")
-        sb.append(self.variable + " << " + self.hex(rol.rhs()) + " )) & " + mask + ";\n")
+        sb.append(self.variable + " << " + self.hex(rol.rhs()) + ")) & " + mask + ";\n")
 
     def visit_rotate_right(self, ror: RotateRight, sb: StringBuilder) -> None:
         mask = self.hex(ror.mask)
         sb.append("\t" + self.variable + " = ")
         sb.append("(((" + self.variable + " & " + mask + ") << " + self.hex(ror.lhs()) + ") | (")
-        sb.append(self.variable + " >> " + self.hex(ror.rhs()) + " )) & " + mask + ";\n")
+        sb.append(self.variable + " >> " + self.hex(ror.rhs()) + ")) & " + mask + ";\n")
 
     def visit_substract(self, sub: Substract, sb: StringBuilder) -> None:
         if sub.value == 1:

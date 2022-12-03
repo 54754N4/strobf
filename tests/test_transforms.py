@@ -4,7 +4,7 @@ from core.transforms import *
 from core.transforms import Transformation, TransformationChain
 
 
-class MyTestCase(unittest.TestCase):
+class TransformationsTest(unittest.TestCase):
     def test_permutations(self) -> None:
         perm = Permutation(0, 3, 2, 16)
         reverse = perm.reversed()

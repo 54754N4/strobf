@@ -41,11 +41,12 @@ optional arguments:
 
 #### Examples
 
+Suppose you want to obfuscate a string and generate a deobfuscation routine in powershell (aliases work, in this case `ps`):
 ```bash
 # Read from stdin
-cat .\file.txt | python3 strobf.py -s -t "ps"
+cat .\file.txt | python3 strobf.py -t "ps" -s
 # Read from file
-python3 strobf.py -f .\file.txt -t "ps"
+python3 strobf.py -t "ps" -f .\file.txt
 # Read from input
 python3 strobf.py -t "ps" -i "Hello World!"
 ```
